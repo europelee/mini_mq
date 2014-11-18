@@ -1,0 +1,15 @@
+CFLAGS = -D_ANDROID -Wall -g -D _DEBUG  -I./ \
+	-Wl,-Bdynamic -llog\
+	--sysroot=$(ANDROID_NDK_ROOT)/platforms/android-19/arch-arm
+CC=$(ANDROID_NDK_ROOT)/toolchains/arm-linux-androideabi-4.8/prebuilt/linux-x86/bin/arm-linux-androideabi-gcc
+SRC=$(wildcard ./*.c)
+OBJ=$(addprefix ./, $(addsuffix .o, $(basename $(SRC))))
+TARGET=test_shm_comm
+
+all: $(TARGET)
+	
+$(TARGET): $(SRC)
+	$(CC)  -o $@  $^ $(CFLAGS)
+
+clean:
+	rm -f $(TARGET) $(OBJ)

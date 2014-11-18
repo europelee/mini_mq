@@ -1,0 +1,13 @@
+CFLAGS = -D_LINUX -Wall -g -D _DEBUG  -I./  -Wl,-Bdynamic -lpthread
+CC=gcc
+SRC=$(wildcard ./*.c)
+OBJ=$(addprefix ./, $(addsuffix .o, $(basename $(SRC))))
+TARGET=test_shm_comm
+
+all: $(TARGET)
+	
+$(TARGET): $(SRC)
+	$(CC)  -o $@  $^ $(CFLAGS)
+
+clean:
+	rm -f $(TARGET) $(OBJ)
