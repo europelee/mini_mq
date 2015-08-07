@@ -85,7 +85,7 @@ typedef struct  chn_comm_ctlinfo {
 }chn_comm_ctlinfo;
 
 
-int	init_memqueue(int mqSize, chn_comm_ctlinfo * pCCInfo, int streamDirect);
+int init_memqueue(int mqSize, chn_comm_ctlinfo * pCCInfo, int streamDirect);
 int init_shmfile(const char * pShmName, int mqSize, chn_comm_ctlinfo * pCCInfo, int streamDirect);
 int shm_write(chn_comm_ctlinfo * pCCInfo, void * pChr, int binSize, int streamDirect);
 int shm_read(chn_comm_ctlinfo * pCCInfo, void * pChr, int binSize, int streamDirect);
