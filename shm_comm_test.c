@@ -73,7 +73,7 @@ void * writer_proc(void *arg)
 			printf("shm_write fail\n");
 			return NULL;
 		}
-		int len = getBuffLen(&(g_chn_test.in_chn));
+		int len = getBuffLen(&(g_chn_test.chn_list[STREAM_IN_DIRECT]));
 		printf("buff length: %u\n",len);   
 		printf("******************************************\n");   
 		sleep(2);
@@ -112,7 +112,7 @@ void * reader_proc(void *arg)
 			printf("shm_read fail\n");
 			return NULL;
 		}
-		int len = getBuffLen(&(g_chn_test.in_chn));
+		int len = getBuffLen(&(g_chn_test.chn_list[STREAM_IN_DIRECT]));
 		printf("buff length: %u\n",len);
 		print_test_info(&test_info);
 		printf("------------------------------------------\n");

@@ -69,6 +69,8 @@
 #define  MAX_NUM_TRY_RW 200
 #define  TIME_SLEEP_RW  50*1000
 
+#define  MAX_CHN_NUM 2
+
 #define is_power_of_2(x) ((x) != 0 && (((x) & ((x) - 1)) == 0))
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 
@@ -80,8 +82,7 @@ typedef struct	shm_comm_ctlinfo {
 }shm_comm_ctlinfo;
 
 typedef struct  chn_comm_ctlinfo {
-	shm_comm_ctlinfo  in_chn;
-	shm_comm_ctlinfo  out_chn;
+	shm_comm_ctlinfo  chn_list[MAX_CHN_NUM];
 }chn_comm_ctlinfo;
 
 

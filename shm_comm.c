@@ -34,34 +34,20 @@
 */
 
 
-#if BRANCH_NEVER_IN
-static chn_comm_ctlinfo  g_chn_netlayer;  // alljoyn i/o
-static chn_comm_ctlinfo  g_chn_chatlayer; // msgcenter chat i/o
-static chn_comm_ctlinfo  g_chn_gamelayer; // msgcenter game i/o
-static chn_comm_ctlinfo  g_chn_mmlayer; // msgcenter multimedia i/o
-#endif
-
-static int	 checkMQHead(shm_comm_ctlinfo * pShmCInfo) {
+static int checkMQHead(shm_comm_ctlinfo * pShmCInfo) {
 	
 	return NULL == pShmCInfo->head_maped?SHM_OPT_FAIL:SHM_OPT_SUCC;
 }
 
 static void  setCCInfo(unsigned char *head_maped, chn_comm_ctlinfo * pCCInfo, int streamDirect, int mqSize) {
-
-	if ( STREAM_IN_DIRECT == streamDirect) {
-	pCCInfo->in_chn.head_maped = head_maped;
-	pCCInfo->in_chn.qsize = mqSize;
-	pCCInfo->in_chn.in_index = 0;
-	pCCInfo->in_chn.out_index = 0;
-	}
-
-	if ( STREAM_OUT_DIRECT == streamDirect) {
-	pCCInfo->out_chn.head_maped = head_maped;
-	pCCInfo->out_chn.qsize = mqSize;
-	pCCInfo->out_chn.in_index = 0;
-	pCCInfo->out_chn.out_index = 0;
-	}
-
+	
+	if (0 > streamDirect || streamDirect >= MAX_CHN_NUM)
+		return;
+	
+	pCCInfo->chn_list[streamDirect].head_maped = head_maped;
+	pCCInfo->chn_list[streamDirect].qsize = mqSize;
+	pCCInfo->chn_list[streamDirect].in_index = 0;
+	pCCInfo->chn_list[streamDirect].out_index = 0;
 }
 
 
@@ -206,94 +192,67 @@ int init_shmfile(const char * pShmName, int mqSize, chn_comm_ctlinfo * pCCInfo, 
 int  shm_write(chn_comm_ctlinfo * pCCInfo, void * pChr, int binSize, int streamDirect) {
 
 	int i4Ret = SHM_OPT_SUCC;
-	if (NULL == pCCInfo || NULL == pChr) {
-		SHM_COMM_LOG(LOG_ERROR, "NULL == pCCInfo || NULL == pChr");
+	if (NULL == pCCInfo || NULL == pChr || (0 > streamDirect || streamDirect >= MAX_CHN_NUM)) {
+		SHM_COMM_LOG(LOG_ERROR, "NULL == pCCInfo || NULL == pChr, or streamDirect [%d] is illegal", streamDirect);
 		return SHM_OPT_FAIL;
 	}
 
-	switch(streamDirect) {
-	case STREAM_IN_DIRECT:
-		if (SHM_OPT_FAIL == checkMQHead(&(pCCInfo->in_chn))) {
-			i4Ret = SHM_OPT_FAIL;
-		}
-		else {
-			int nLoop = MAX_NUM_TRY_RW;
-			uint32_t wLen = buffer_write(&(pCCInfo->in_chn), pChr, binSize);
-			while (wLen != binSize)
-			{
-				if (nLoop < 0)
-				{
-					SHM_COMM_LOG(LOG_ERROR, "try out, wLen != binSize");
-					i4Ret = SHM_OPT_FAIL;					
-					break;
-				}
-				--nLoop;
-				SHM_COMM_LOG(LOG_INFO, "try write again!");
-				usleep(TIME_SLEEP_RW);
-				uint32_t cLen = buffer_write(&(pCCInfo->in_chn), pChr+wLen, binSize-wLen);
-				wLen += cLen;
-			}
-			
-		}
-		break;
-
-	case STREAM_OUT_DIRECT:
-
-		break;
-
-	default:
+	if (SHM_OPT_FAIL == checkMQHead(&(pCCInfo->chn_list[streamDirect]))) {
 		i4Ret = SHM_OPT_FAIL;
-		break;
+	}
+	else {
+		int nLoop = MAX_NUM_TRY_RW;
+		uint32_t wLen = buffer_write(&(pCCInfo->chn_list[streamDirect]), pChr, binSize);
+		while (wLen != binSize)
+		{
+			if (nLoop < 0)
+			{
+				SHM_COMM_LOG(LOG_ERROR, "try out, wLen != binSize");
+				i4Ret = SHM_OPT_FAIL;					
+				break;
+			}
+			--nLoop;
+			SHM_COMM_LOG(LOG_INFO, "try write again!");
+			usleep(TIME_SLEEP_RW);
+			uint32_t cLen = buffer_write(&(pCCInfo->chn_list[streamDirect]), pChr+wLen, binSize-wLen);
+			wLen += cLen;
+		}
+
 	}
 
-	
-		return i4Ret;
-	
+	return i4Ret;
+
 }
 
 int  shm_read(chn_comm_ctlinfo * pCCInfo, void * pChr, int binSize, int streamDirect) {
 
 	int i4Ret = SHM_OPT_SUCC;
-	if (NULL == pCCInfo || NULL == pChr) {
+	if (NULL == pCCInfo || NULL == pChr || (0 > streamDirect || streamDirect >= MAX_CHN_NUM)) {
 		SHM_COMM_LOG(LOG_ERROR, "NULL == pCCInfo || NULL == pChr");
 		return SHM_OPT_FAIL;
 	}
 
-	switch(streamDirect) {
-		
-	case STREAM_IN_DIRECT:
-		if (SHM_OPT_FAIL == checkMQHead(&(pCCInfo->in_chn))) {
-			i4Ret = SHM_OPT_FAIL;
-		}
-		else {
-			int nLoop = MAX_NUM_TRY_RW;
-			uint32_t rLen = buffer_read(&(pCCInfo->in_chn), pChr, binSize);
-			while (rLen != binSize)
+	if (SHM_OPT_FAIL == checkMQHead(&(pCCInfo->chn_list[streamDirect]))) {
+		i4Ret = SHM_OPT_FAIL;
+	}
+	else {
+		int nLoop = MAX_NUM_TRY_RW;
+		uint32_t rLen = buffer_read(&(pCCInfo->chn_list[streamDirect]), pChr, binSize);
+		while (rLen != binSize)
+		{
+			if (nLoop < 0)
 			{
-				if (nLoop < 0)
-				{
-					SHM_COMM_LOG(LOG_ERROR, "try out, rLen != binSize");
-					i4Ret = SHM_OPT_FAIL;					
-					break;
-				}
-				--nLoop;
-				SHM_COMM_LOG(LOG_INFO, "try read again!");
-				usleep(TIME_SLEEP_RW);
-				uint32_t cLen = buffer_read(&(pCCInfo->in_chn), pChr+rLen, binSize-rLen);
-				rLen += cLen;
+				SHM_COMM_LOG(LOG_ERROR, "try out, rLen != binSize");
+				i4Ret = SHM_OPT_FAIL;					
+				break;
 			}
-			
+			--nLoop;
+			SHM_COMM_LOG(LOG_INFO, "try read again!");
+			usleep(TIME_SLEEP_RW);
+			uint32_t cLen = buffer_read(&(pCCInfo->chn_list[streamDirect]), pChr+rLen, binSize-rLen);
+			rLen += cLen;
 		}
-
-		break;
-
-	case STREAM_OUT_DIRECT:
-
-		break;
-
-	default:
-
-		break;
+		
 	}
 
 	return i4Ret;
@@ -303,30 +262,15 @@ int  fini_memqueue(int mqSize, chn_comm_ctlinfo * pCCInfo, int streamDirect) {
 
 	int i4Ret = SHM_OPT_SUCC;
 	
-	if (NULL == pCCInfo) {
-		SHM_COMM_LOG(LOG_ERROR, "NULL == pCCInfo");
+	if (NULL == pCCInfo || (0 > streamDirect || streamDirect >= MAX_CHN_NUM)) {
+		SHM_COMM_LOG(LOG_ERROR, "NULL == pCCInfo or streamDirect [%d] illegal", streamDirect);
 		return SHM_OPT_FAIL;
 	}
 
-	if ( STREAM_IN_DIRECT == streamDirect) {
-
-		if (NULL != pCCInfo->in_chn.head_maped) {
-			free(pCCInfo->in_chn.head_maped);		
-			pCCInfo->in_chn.head_maped = NULL;
-		}
-
-	}	
-
-
-	if ( STREAM_OUT_DIRECT == streamDirect) {
-
-		if (NULL != pCCInfo->out_chn.head_maped) {
-			free(pCCInfo->out_chn.head_maped);		
-			pCCInfo->out_chn.head_maped = NULL;
-		}
-
+	if (NULL != pCCInfo->chn_list[streamDirect].head_maped) {
+		free(pCCInfo->chn_list[streamDirect].head_maped);		
+		pCCInfo->chn_list[streamDirect].head_maped = NULL;
 	}
-
 
 	return i4Ret;
 
@@ -336,35 +280,22 @@ int  fini_shmfile(int mqSize, chn_comm_ctlinfo * pCCInfo, int streamDirect) {
 
 	int i4Ret = SHM_OPT_SUCC;
 	
-	if (NULL == pCCInfo) {
-		SHM_COMM_LOG(LOG_ERROR, "NULL == pCCInfo");
+	
+	if (NULL == pCCInfo || (0 > streamDirect || streamDirect >= MAX_CHN_NUM)) {
+		SHM_COMM_LOG(LOG_ERROR, "NULL == pCCInfo or streamDirect [%d] illegal", streamDirect);
 		return SHM_OPT_FAIL;
 	}
-	
-	if ( STREAM_IN_DIRECT == streamDirect) {
 
-		if ((NULL != pCCInfo->in_chn.head_maped)
-				&& ((munmap((void *) pCCInfo->in_chn.head_maped, mqSize)) == -1)) {
-			SHM_COMM_LOG(LOG_ERROR,"error munmap SHM_FILE: %d", errno);
-			perror("munmap");
-			return SHM_OPT_FAIL;
-		}
 
-		pCCInfo->in_chn.head_maped = NULL;
-
+	if ((NULL != pCCInfo->chn_list[streamDirect].head_maped)
+			&& ((munmap((void *) pCCInfo->chn_list[streamDirect].head_maped, mqSize)) == -1)) {
+		SHM_COMM_LOG(LOG_ERROR,"error munmap SHM_FILE: %d", errno);
+		perror("munmap");
+		return SHM_OPT_FAIL;
 	}
 
-	if ( STREAM_OUT_DIRECT == streamDirect) {
-		if ((NULL != pCCInfo->out_chn.head_maped)
-				&& ((munmap((void *) pCCInfo->out_chn.head_maped, mqSize)) == -1)) {
-			SHM_COMM_LOG(LOG_ERROR,"error munmap SHM_FILE: %d", errno);
-			perror("munmap");
-			return SHM_OPT_FAIL;
-		}
+	pCCInfo->chn_list[streamDirect].head_maped = NULL;
 
-		pCCInfo->out_chn.head_maped = NULL;
-
-	}	
 
 	return i4Ret;
 }
