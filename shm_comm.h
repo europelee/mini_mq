@@ -8,7 +8,7 @@
 #define SHM_COMM_H
 
 #ifdef _ANDROID
-	#include <android/log.h>
+#include <android/log.h>
 #endif
 
 #include<stdio.h>
@@ -35,23 +35,23 @@
 
 #define SHM_COMM_LOG(level,format,...) \
     do { \
-		fprintf(stdout, "[%s|%s@%s,%d] " format "\n", \
-		level, __func__, __FILE__, __LINE__, ##__VA_ARGS__ ); \
-	} while (0)
+        fprintf(stdout, "[%s|%s@%s,%d] " format "\n", \
+                level, __func__, __FILE__, __LINE__, ##__VA_ARGS__ ); \
+    } while (0)
 
 #elif _ANDROID
 
 #define SHM_COMM_LOG(level,...) \
     do { \
-			if (0 == strcmp(level, LOG_ERROR)) \
-			{ \
-				__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__); \
-			} \
-			else \
-			{ \
-				__android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__); \
-			} \
-	} while (0)
+        if (0 == strcmp(level, LOG_ERROR)) \
+        { \
+            __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__); \
+        } \
+        else \
+        { \
+            __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__); \
+        } \
+    } while (0)
 
 #endif
 
@@ -75,27 +75,32 @@
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 
 typedef struct	shm_comm_ctlinfo {
-	unsigned char *head_maped;
-	unsigned int in_index; //next input index
-	unsigned int out_index;
-	unsigned int qsize;
+    unsigned char *head_maped;
+    unsigned int in_index; //next input index
+    unsigned int out_index;
+    unsigned int qsize;
 }shm_comm_ctlinfo;
 
 typedef struct  chn_comm_ctlinfo {
-	shm_comm_ctlinfo  chn_list[MAX_CHN_NUM];
+    shm_comm_ctlinfo  chn_list[MAX_CHN_NUM];
 }chn_comm_ctlinfo;
 
+#ifdef __cplusplus 
+extern "C" { 
+#endif
 
-int init_memqueue(int mqSize, chn_comm_ctlinfo * pCCInfo, int streamDirect);
-int init_shmfile(const char * pShmName, int mqSize, chn_comm_ctlinfo * pCCInfo, int streamDirect);
-int shm_write(chn_comm_ctlinfo * pCCInfo, void * pChr, int binSize, int streamDirect);
-int shm_read(chn_comm_ctlinfo * pCCInfo, void * pChr, int binSize, int streamDirect);
-int fini_memqueue(int mqSize, chn_comm_ctlinfo * pCCInfo, int streamDirect);
-int fini_shmfile(int mqSize, chn_comm_ctlinfo * pCCInfo, int streamDirect); 
-int remove_shmfile(const char * pShmName);
-int getBuffLen(shm_comm_ctlinfo * pShmCInfo);
+    int init_memqueue(int mqSize, chn_comm_ctlinfo * pCCInfo, int streamDirect);
+    int init_shmfile(const char * pShmName, int mqSize, chn_comm_ctlinfo * pCCInfo, int streamDirect);
+    int shm_write(chn_comm_ctlinfo * pCCInfo, void * pChr, int binSize, int streamDirect);
+    int shm_read(chn_comm_ctlinfo * pCCInfo, void * pChr, int binSize, int streamDirect);
+    int fini_memqueue(int mqSize, chn_comm_ctlinfo * pCCInfo, int streamDirect);
+    int fini_shmfile(int mqSize, chn_comm_ctlinfo * pCCInfo, int streamDirect); 
+    int remove_shmfile(const char * pShmName);
+    int getBuffLen(shm_comm_ctlinfo * pShmCInfo);
 
-
+#ifdef __cplusplus 
+} 
+#endif
 
 
 #endif

@@ -59,7 +59,7 @@ static uint32_t buffer_write(shm_comm_ctlinfo * pShmCInfo, void *buffer, uint32_
 	len  = min(size, pShmCInfo->qsize - (pShmCInfo->in_index & (pShmCInfo->qsize - 1)));    
 	memcpy(pShmCInfo->head_maped + (pShmCInfo->in_index & (pShmCInfo->qsize - 1)), buffer, len);   
 	/* then put the rest (if any) at the beginning of the buffer */    
-	memcpy(pShmCInfo->head_maped, buffer + len, size - len);   
+	memcpy(pShmCInfo->head_maped, (char *)buffer + len, size - len);   
 	pShmCInfo->in_index += size;    
 	return size;
 
@@ -75,7 +75,7 @@ static uint32_t buffer_read(shm_comm_ctlinfo * pShmCInfo, void *buffer, uint32_t
 	len = min(size, pShmCInfo->qsize - (pShmCInfo->out_index & (pShmCInfo->qsize - 1)));    
 	memcpy(buffer, pShmCInfo->head_maped + (pShmCInfo->out_index & (pShmCInfo->qsize - 1)), len);   
 	/* then get the rest (if any) from the beginning of the buffer */    
-	memcpy(buffer + len, pShmCInfo->head_maped, size - len);    
+	memcpy((char *)buffer + len, pShmCInfo->head_maped, size - len);    
 	pShmCInfo->out_index += size;    
 	return size;	
 }
@@ -146,7 +146,7 @@ int init_shmfile(const char * pShmName, int mqSize, chn_comm_ctlinfo * pCCInfo, 
 
 	int fd = -1;
 	//O_EXCL for exclude case: another process/thread still open and do some job
-	if ((fd = open(pShmName, O_RDWR | O_CREAT | O_EXCL)) == -1) {
+	if ((fd = open(pShmName, O_RDWR | O_CREAT | O_EXCL, 0777)) == -1) {
 		if (errno != EEXIST) {
 			SHM_COMM_LOG(LOG_ERROR, "open fail: %d", errno);
 			return SHM_OPT_FAIL;
@@ -158,7 +158,7 @@ int init_shmfile(const char * pShmName, int mqSize, chn_comm_ctlinfo * pCCInfo, 
 						pShmName, errno);
 				return SHM_OPT_FAIL;
 			} else {
-				fd = open(pShmName, O_RDWR | O_CREAT | O_EXCL);
+				fd = open(pShmName, O_RDWR | O_CREAT | O_EXCL, 0777);
 				if (-1 == fd) {
 					SHM_COMM_LOG(LOG_ERROR, "open fail again!: %d ", errno);
 					return SHM_OPT_FAIL;
@@ -173,7 +173,7 @@ int init_shmfile(const char * pShmName, int mqSize, chn_comm_ctlinfo * pCCInfo, 
 		return SHM_OPT_FAIL;
 	}
 
-	unsigned char *head_maped = mmap(0, mqSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	unsigned char *head_maped = (unsigned char *)mmap(0, mqSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
 	if (head_maped == MAP_FAILED || head_maped == NULL) {
 		SHM_COMM_LOG(LOG_ERROR, "error mmap SHM_FILE: %d", errno);
@@ -189,7 +189,7 @@ int init_shmfile(const char * pShmName, int mqSize, chn_comm_ctlinfo * pCCInfo, 
 	return SHM_OPT_SUCC;
 }
 
-int  shm_write(chn_comm_ctlinfo * pCCInfo, void * pChr, int binSize, int streamDirect) {
+int  shm_write(chn_comm_ctlinfo * pCCInfo, void * pChr, uint32_t binSize, int streamDirect) {
 
 	int i4Ret = SHM_OPT_SUCC;
 	if (NULL == pCCInfo || NULL == pChr || (0 > streamDirect || streamDirect >= MAX_CHN_NUM)) {
@@ -214,7 +214,7 @@ int  shm_write(chn_comm_ctlinfo * pCCInfo, void * pChr, int binSize, int streamD
 			--nLoop;
 			SHM_COMM_LOG(LOG_INFO, "try write again!");
 			usleep(TIME_SLEEP_RW);
-			uint32_t cLen = buffer_write(&(pCCInfo->chn_list[streamDirect]), pChr+wLen, binSize-wLen);
+			uint32_t cLen = buffer_write(&(pCCInfo->chn_list[streamDirect]), (char *)pChr+wLen, binSize-wLen);
 			wLen += cLen;
 		}
 
@@ -224,7 +224,7 @@ int  shm_write(chn_comm_ctlinfo * pCCInfo, void * pChr, int binSize, int streamD
 
 }
 
-int  shm_read(chn_comm_ctlinfo * pCCInfo, void * pChr, int binSize, int streamDirect) {
+int  shm_read(chn_comm_ctlinfo * pCCInfo, void * pChr, uint32_t binSize, int streamDirect) {
 
 	int i4Ret = SHM_OPT_SUCC;
 	if (NULL == pCCInfo || NULL == pChr || (0 > streamDirect || streamDirect >= MAX_CHN_NUM)) {
@@ -249,7 +249,7 @@ int  shm_read(chn_comm_ctlinfo * pCCInfo, void * pChr, int binSize, int streamDi
 			--nLoop;
 			SHM_COMM_LOG(LOG_INFO, "try read again!");
 			usleep(TIME_SLEEP_RW);
-			uint32_t cLen = buffer_read(&(pCCInfo->chn_list[streamDirect]), pChr+rLen, binSize-rLen);
+			uint32_t cLen = buffer_read(&(pCCInfo->chn_list[streamDirect]), (char *)pChr+rLen, binSize-rLen);
 			rLen += cLen;
 		}
 		
