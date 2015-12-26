@@ -31,7 +31,7 @@
 #define LOG_INFO  "INFOR"
 #define LOG_CRIT  "CRTCL"
 
-#ifdef _LINUX
+#ifdef __linux__
 
 #define SHM_COMM_LOG(level,format,...) \
     do { \
