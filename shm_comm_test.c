@@ -22,11 +22,13 @@ typedef struct test_info
 	uint32_t g;
 }test_info;
 
+
 static chn_comm_ctlinfo  g_chn_test;
 static volatile sig_atomic_t s_interrupt = false;
 
 void get_test_info(test_info* pInfo, uint32_t var)
-{     
+{
+   	
 	if (!pInfo)   
 	{   
 		fprintf(stderr, "pInfo is NULL.\n");    

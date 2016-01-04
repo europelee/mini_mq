@@ -85,22 +85,14 @@ typedef struct  chn_comm_ctlinfo {
     shm_comm_ctlinfo  chn_list[MAX_CHN_NUM];
 }chn_comm_ctlinfo;
 
-#ifdef __cplusplus 
-extern "C" { 
-#endif
 
     int init_memqueue(int mqSize, chn_comm_ctlinfo * pCCInfo, int streamDirect);
     int init_shmfile(const char * pShmName, int mqSize, chn_comm_ctlinfo * pCCInfo, int streamDirect);
-    int shm_write(chn_comm_ctlinfo * pCCInfo, void * pChr, int binSize, int streamDirect);
-    int shm_read(chn_comm_ctlinfo * pCCInfo, void * pChr, int binSize, int streamDirect);
+    int shm_write(chn_comm_ctlinfo * pCCInfo, void * pChr, uint32_t binSize, int streamDirect);
+    int shm_read(chn_comm_ctlinfo * pCCInfo, void * pChr, uint32_t binSize, int streamDirect);
     int fini_memqueue(int mqSize, chn_comm_ctlinfo * pCCInfo, int streamDirect);
     int fini_shmfile(int mqSize, chn_comm_ctlinfo * pCCInfo, int streamDirect); 
     int remove_shmfile(const char * pShmName);
     int getBuffLen(shm_comm_ctlinfo * pShmCInfo);
-
-#ifdef __cplusplus 
-} 
-#endif
-
 
 #endif

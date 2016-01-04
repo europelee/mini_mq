@@ -12,7 +12,7 @@ matrix:
           packages: ['gcc-4.8']
       before_script:
       after_success:
-        - make clean
+          - make clean -f MakeFile.test.linux
       env: COMPILER=gcc-4.8
 
 script:
