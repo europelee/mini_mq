@@ -1,1 +1,19 @@
 language: c
+
+sudo: false
+# from http://stackoverflow.com/a/32127147/266378
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['gcc-4.8']
+      before_script:
+      after_success:
+        - make clean
+      env: COMPILER=gcc-4.8
+
+script:
+  - make -f Makefile.test.linux
